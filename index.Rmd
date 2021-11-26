@@ -26,6 +26,8 @@ library(klippy)  #- remotes::install_github("rlesur/klippy")
 library(knitr)
 ```
 
+
+pau la chupa
 ```{r chunk-setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, 
                       #results = "hold",
@@ -40,8 +42,7 @@ knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
 ```{r options-setup, include = FALSE}
 options(scipen = 999) #- para quitar la notación científica
 options("yaml.eval.expr" = TRUE) 
-```
-
+``` 
 
 ```{r klippy, echo = FALSE}
 klippy::klippy(position = c("top", "right")) #- remotes::install_github("rlesur/klippy")
