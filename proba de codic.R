@@ -102,3 +102,31 @@ rio::export(df_min_max, "./datos/pens_min_max.csv")
 
 df_min_max_csv <- rio::import("./datos/pens_min_max.csv")
 
+
+
+df_alternativas <- rio::import("./datos/otras_alternativas.xlsx")
+rio::export(df_alternativas, "./datos/df_alternativas.csv")
+df_alternativas <- rio::import("./datos/df_alternativas.csv")
+
+#Vamos a arreglarlo un poco, seleccionamos solo uno de cada tipo para quitar duplicados y subcuentas de activos.
+
+df_alternativas_2 <- df_alternativas %>%
+  select(FECHA, `Todos los instrumentos`, `Oro monetario y DEG`, `Efectivo y depósitos`, `Valores representativos de deuda`, Préstamos, `Participaciones en el capital y en FI`, `Sistemas de seguros, pensiones y garantías estandarizadas`, `Otros activos/pasivos`)
+
+#https://www.bde.es/webbde/es/estadis/infoest/temas/sb_cfesp.html
+
+library(gifski)
+df_grafico <- df_alternativas_2 %>%
+  select(FECHA, `Oro monetario y DEG`, `Efectivo y depósitos`, `Valores representativos de deuda`, Préstamos, `Participaciones en el capital y en FI`, `Sistemas de seguros, pensiones y garantías estandarizadas`, `Otros activos/pasivos`)
+
+df_grafico_2 <- df_grafico %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
+
+rio::export(df_grafico_2, "./datos/df_grafico.csv")
+df_grafico_2 <- rio::import("./datos/df_grafico.csv")
+df_alternativas_2[, c(1:9)] <- sapply(df_alternativas_2[, c(1:9)], as.numeric)
+df_grafico_2 <- df_grafico_2 %>% group_by(FECHA, Activos) 
+df_grafico_2
+g1 <- ggplot(df_grafico_2, aes(x = FECHA, y = Miles_de_euros, color = Activos)) + geom_line()
+g1
+str(df_alternativas_2)
+
