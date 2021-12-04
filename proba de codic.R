@@ -135,11 +135,11 @@ df_alternativas[, c(1:9)] <- sapply(df_alternativas[, c(1:9)], as.numeric)
 
 
 
-df_grafico_2 <- df_grafico %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
+df_grafico <- df_alterantivas %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
 
-df_grafico_2 <- df_grafico_2 %>% group_by(FECHA, Activos) 
-df_grafico_2
-g1 <- ggplot(df_grafico_2, aes(x = FECHA, y = Miles_de_euros, color = Activos)) + geom_line()
+df_grafico <- df_grafico %>% group_by(year, Activos) 
+df_grafico
+g1 <- ggplot(df_grafico, aes(x = year, y = Miles_de_euros, color = Activos)) + geom_line()
 g1
 
 
