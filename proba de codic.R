@@ -18,6 +18,7 @@ library(hrbrthemes)
 library(sf)
 library(RColorBrewer)
 library(rio)
+library(gifski)
 
 df_paro <- rio::import("./datos/tasa_paro.xls")
 df_natalidad <- rio::import("./datos/tasa_natalidad.xls")
@@ -30,6 +31,7 @@ df_tramo <- rio::import("./datos/pensiones_tramo.xls")
 df_pens_med <- rio::import("./datos/pension_media.xls")
 df_w_medio <- rio::import("./datos/salario_medio.xlsx")
 df_smi <- rio::import("./datos/smi.xlsx")
+df_alternativas <- rio::import("./datos/otras_alternativas.xlsx")
 
 df_paro_l_csv <- rio::import("./datos/tasa_paro.csv")
 
@@ -104,29 +106,40 @@ df_min_max_csv <- rio::import("./datos/pens_min_max.csv")
 
 
 
-df_alternativas <- rio::import("./datos/otras_alternativas.xlsx")
+
 rio::export(df_alternativas, "./datos/df_alternativas.csv")
 df_alternativas <- rio::import("./datos/df_alternativas.csv")
 
+
+
 #Vamos a arreglarlo un poco, seleccionamos solo uno de cada tipo para quitar duplicados y subcuentas de activos.
+df_alternativas <- janitor::clean_names(df_alternativas) 
+names(df_alternativas)
+ 
+df_alternativas <- df_alternativas %>%
+  rename(year = fecha) %>%
+  rename(total = todos_los_instrumentos) %>%
+  rename(oro = oro_monetario_y_deg_2) %>%
+  rename(Ef_y_De = efectivo_y_depositos_2) %>%
+  rename(deuda = valores_representativos_de_deuda_2) %>%
+  rename(loan = prestamos_2) %>%
+  rename(capital = participaciones_en_el_capital_y_en_fi_2) %>%
+  rename(pensiones_priv = sistemas_de_seguros_pensiones_y_garantias_estandarizadas_2) %>%
+  rename(otros = otros_activos_pasivos_2)
 
-df_alternativas_2 <- df_alternativas %>%
-  select(FECHA, `Todos los instrumentos`, `Oro monetario y DEG`, `Efectivo y depósitos`, `Valores representativos de deuda`, Préstamos, `Participaciones en el capital y en FI`, `Sistemas de seguros, pensiones y garantías estandarizadas`, `Otros activos/pasivos`)
+df_alternativas <- df_alternativas %>%
+  select(year, total, oro, Ef_y_De, deuda, loan, capital, pensiones_priv, otros)
 
+df_alternativas[, c(1:9)] <- sapply(df_alternativas[, c(1:9)], as.numeric)
 #https://www.bde.es/webbde/es/estadis/infoest/temas/sb_cfesp.html
 
-library(gifski)
-df_grafico <- df_alternativas_2 %>%
-  select(FECHA, `Oro monetario y DEG`, `Efectivo y depósitos`, `Valores representativos de deuda`, Préstamos, `Participaciones en el capital y en FI`, `Sistemas de seguros, pensiones y garantías estandarizadas`, `Otros activos/pasivos`)
+
 
 df_grafico_2 <- df_grafico %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
 
-rio::export(df_grafico_2, "./datos/df_grafico.csv")
-df_grafico_2 <- rio::import("./datos/df_grafico.csv")
-df_alternativas_2[, c(1:9)] <- sapply(df_alternativas_2[, c(1:9)], as.numeric)
 df_grafico_2 <- df_grafico_2 %>% group_by(FECHA, Activos) 
 df_grafico_2
 g1 <- ggplot(df_grafico_2, aes(x = FECHA, y = Miles_de_euros, color = Activos)) + geom_line()
 g1
-str(df_alternativas_2)
+
 
