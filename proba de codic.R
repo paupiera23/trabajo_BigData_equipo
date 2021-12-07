@@ -160,9 +160,9 @@ plot_dinamico <- df_alternativas_3 %>%
            color = "grey", 
            show.legend = FALSE) +
   geom_text(aes(label = as.numeric(Miles_de_euros)), 
-            position = position_dodge(5), 
+            position = position_stack(), 
             vjust= 1,
-            hjust= 1,
+            hjust= -0.1,
             size = 4, 
             color = "white")+
   scale_fill_manual(values = c("orange", "darkgrey", "green", "red", "blue", "yellow", "purple")) +
