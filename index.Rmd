@@ -67,7 +67,23 @@ La página web de la asignatura y los trabajos de mis compañeros pueden verse [
 La introducción **es una de las partes importantes del trabajo**. En la introducción suele ponerse el objetivo, motivación, un pequeño resumen del trabajo y avance de conclusiones si es que hay.
 
 ```{r, eval = TRUE}
-2 + 2
+
+Las pensiones en España se han convertido en un tema abordable para su estudio y análisis. Podemos decir que el sistema de pensiones se ve afectado por 2 grandes grupos de variables: la demografía y el mercado laboral. 
+
+Para que lo entendamos, existen dos tipos de sistemas de pensiones:
+
+Sistema de Reparto: los trabajadores del momento pagan unas cotizaciones a la seguridad social que están destinadas al pago de las pensiones de dicho momento (Es decir, los trabajadores les pagan a los pensionistas y, cuando se jubilen, los antiguos trabajadores cobrarán gracias a los futuros trabajadores)
+
+Sistema de Capitalización: cada trabajador hace sus aportaciones y, cuando se jubile, cobrará dichas aportaciones (actualizadas)
+
+En España el sistema que tenemos es el de reparto. Por tanto, este sistema funciona correctamente si la corriente de ingresos (trabajadores) y pagos (pensionistas) está equilibrada. En el momento en el que ese equilibrio se rompe de manera no transitoria, el problema se agrava y hay que abordarlo para que el sistema de pensiones sea sostenible. 
+
+¿Qué está pasando con el sistema de pensiones español? ¿Funciona correctamente? ¿Es sostenible?
+Algunos expertos afirman que el sistema está quebrado:
+
+Y otros, no piensan igual:
+
+
 ```
 
 Yo no usaría CSS, bastante trabajo tenéis, pero ... si usas CSS para tunear tu html podrás dejarlo más bonito, o al menos más a tu gusto. Por ejemplo, podrás fácilmente cambiar el tamaño de algunas palabras, por ejemplo, **[unas palabras en grande y en negrita]{.large}**, aunque si estas usando CSS saldrán en verde porque en el CSS he puesto que la negrita salga en verde. Por ejemplo, podrás poner fácilmente [unas palabras en purple]{.purple}, y ahora, [[en grande y en rojito]{.rojito}]{.large}.
