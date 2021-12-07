@@ -133,13 +133,58 @@ df_alternativas <- df_alternativas %>%
 df_alternativas[, c(1:9)] <- sapply(df_alternativas[, c(1:9)], as.numeric)
 #https://www.bde.es/webbde/es/estadis/infoest/temas/sb_cfesp.html
 
+library(gifski)
+df_alternativas_2 <- df_alternativas %>%
+  filter(year == 2020) 
+df_alternativas_2$comprobacion = rowSums (df_alternativas_2[ , 3:9])
+#En la columna total y comprobación debería salir lo mismo. Vemos que no sale exactamente el mismo número, quizá sea un tema de decimales. 
+df_alternativas_2 <- df_alternativas_2 %>%
+  select(-total) %>% rename(total = comprobacion)
+df_alternativas_2 <- df_alternativas_2 %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
+
+df_alternativas_2$porcentaje <- round(prop.table(df_alternativas_2$Miles_de_euros), 7)*100
+
+g1 <- ggplot(df_alternativas_2, aes(x=1, y=porcentaje, fill= Activos)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label = paste0(round(porcentaje,1),"%")), 
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y") + 
+  theme_void()
+g1 
+
+plot_dinamico <- df_alternativas_3 %>%
+  ggplot(aes(x = Activos, 
+             y = Miles_de_euros, 
+             fill= Activos )) +
+  geom_bar(stat= "identity", 
+           color = "grey", 
+           show.legend = FALSE) +
+  geom_text(aes(label = as.numeric(Miles_de_euros)), 
+            position = position_dodge(5), 
+            vjust= 1,
+            hjust= 1,
+            size = 4, 
+            color = "white")+
+  scale_fill_manual(values = c("orange", "darkgrey", "green", "red", "blue", "yellow", "purple")) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()+
+  enter_appear() +
+  transition_states(year, 
+                    transition_length = 5, 
+                    state_length = 5) +
+  labs(title = " Peso de los activos financieros por año \n Year : {closest_state}", 
+       subtitle = "En miles de euros",
+       y = "",
+       x = "",
+       caption = "Banco de España") +
+  theme(panel.grid.major.x = element_blank(),
+        plot.title = element_text(size = 18, 
+                                  face = "bold", 
+                                  hjust = 0.5),
+        plot.subtitle = element_text(size=14, 
+                                     face = "plain", 
+                                     hjust = 0.5)) 
 
 
-df_grafico <- df_alterantivas %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
-
-df_grafico <- df_grafico %>% group_by(year, Activos) 
-df_grafico
-g1 <- ggplot(df_grafico, aes(x = year, y = Miles_de_euros, color = Activos)) + geom_line()
-g1
 
 
