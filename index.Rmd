@@ -64,10 +64,6 @@ La página web de la asignatura y los trabajos de mis compañeros pueden verse [
 
 # [1. Introducción]{.verdecito}
 
-La introducción **es una de las partes importantes del trabajo**. En la introducción suele ponerse el objetivo, motivación, un pequeño resumen del trabajo y avance de conclusiones si es que hay.
-
-```{r, eval = TRUE}
-
 Las pensiones en España se han convertido en un tema abordable para su estudio y análisis. Podemos decir que el sistema de pensiones se ve afectado por 2 grandes grupos de variables: la demografía y el mercado laboral. 
 
 Para que lo entendamos, existen dos tipos de sistemas de pensiones:
@@ -82,6 +78,17 @@ En España el sistema que tenemos es el de reparto. Por tanto, este sistema func
 Algunos expertos afirman que el sistema está quebrado:
 
 Y otros, no piensan igual:
+
+Pero… no saquemos conclusiones precipitadas y analicemos las principales variables que afectan a nuestro sistema.
+
+
+## 1.1 ¿Por qué hacemos este trabajo?
+Vista la problemática tanto del tema como de las posibles soluciones y la pasividad de los políticos, como la gran mayoría dependeremos de una pensión en el futuro, queremos ver si los conductores del sistema nacional de pensiones nos llevan hacia la deriva o si todo esto es otro discurso populista de los políticos para hacer oposición.
+
+
+```{r, eval = TRUE}
+
+
 
 
 ```
