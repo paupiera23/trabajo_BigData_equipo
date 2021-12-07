@@ -90,7 +90,8 @@ Yo no usaría CSS, bastante trabajo tenéis, pero ... si usas CSS para tunear tu
 
 # 2. Datos
 
-Una parte **importante** del trabajo es explicar **de donde proceden los datos** y cual ha sido el proceso de limpieza
+Nos ha llevado un tiempo extraer todos los datos necesarios, la mayoría son obtenidos del INE, (foto del ine) aunque también tenemos datos de Eurostat y del Banco de España. Nos hemos descargado los datos en csv, algunos estaban bien, pero otros daban problemas debido a que no los reconocía como numéricos, los nombres de las variables eran demasiado largos, por lo que era incómodo a la hora de trabajar y había mucha información que sobraba. 
+
 
 ```{r, eval = TRUE}
 ggplot(iris, aes(Sepal.Length, Petal.Length)) + geom_point()
