@@ -1,0 +1,1284 @@
+---
+title: "Sistema de Pensiones Español"
+author: "Pau Piera Palacios(paupiepa@alumni.uv.es)  \n\n Mario García Zamora(magarza2@alumni.uv.es)  \n \n Rubén Campos Campos (rucamcam@alumni.uv.es). \n\n Universitat de València"
+date: "Diciembre de 2021 (actualizado el `r format(Sys.time(), '%d-%m-%Y')`)"
+output:
+  html_document:
+    #css: "./assets/my_css_file.css"
+    theme: paper
+    highlight: textmate 
+    toc: true
+    toc_depth: 3 
+    toc_float: 
+      collapsed: true
+      smooth_scroll: true
+    self_contained: true
+    number_sections: false
+    df_print: kable
+    code_download: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r packages-setup, include = FALSE}
+
+library(tidyverse)
+library(klippy)  
+library(knitr)
+library(tibble)
+library(ggthemes)
+library(ggplot2)
+library(dplyr)
+library(patchwork)
+library(ggrepel)
+library(sf)
+library(ggspatial)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(pjpv2020.01)
+library(plotly)
+library(gganimate)
+library (gifski)
+library(gt)
+library(kableExtra)
+library(DT)
+library(leaflet) 
+library(leafem) 
+library(DT)
+library(tmap)
+library(leaflet)
+library(vembedr)
+#devtools::install_github("ijlyttle/vembedr")
+
+```
+
+```{r chunk-setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, warning = FALSE, 
+                      #results = "hold",
+                      cache = FALSE, cache.path = "/caches/", comment = "#>",
+                      #fig.width = 7, #fig.height= 7,   
+                      #out.width = 7, out.height = 7,
+                      collapse = TRUE,  fig.show = "hold",
+                      fig.asp = 7/9, out.width = "75%", fig.align = "center")
+knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
+```
+
+
+```{r options-setup, include = FALSE}
+options(scipen = 999) #- para quitar la notación científica
+options("yaml.eval.expr" = TRUE) 
+```
+
+
+```{r klippy, echo = FALSE}
+klippy::klippy(position = c("top", "right")) #- remotes::install_github("rlesur/klippy")
+```
+
+<div style="text-align: justify"><div/>
+
+<hr class="linea-black">
+
+<!-- El párrafo de abajo has de dejarlo casi igual, solo HAS de SUSTITUIR "perezp44" por tu usuario de Github-->
+Trabajo elaborado para la asignatura "Programación y manejo de datos en la era del Big Data" de la Universitat de València durante el curso 2021-2022. El repo del trabajo está [aquí](https://github.com/paupiera23/trabajo_BigData_equipo){target="_blank"}. 
+
+<!-- El párrafo de abajo has de dejarlo exactamente igual, NO has de cambiar nada-->
+
+La página web de la asignatura y los trabajos de mis compañeros pueden verse [aquí](https://perezp44.github.io/intro-ds-21-22-web/07-trabajos.html){target="_blank"}.
+
+<hr class="linea-red">
+
+
+
+#  <FONT COLOR="Black"> **Introducción** </FONT>
+
+
+El principal análisis de este trabajo va a ser el Sistema de pensiones español y las diversas variables que lo envuelven al mismo. Dentro de estas variables podemos encontrar variables demográficas como pueden ser la esperanza de vida, la tasa de natalidad... también vamos a analizar diversas variables económicas relacionadas tanto con el mercado laboral como en el gasto en pensiones...
+
+
+Las pensiones en España se han convertido en un tema abordable para su estudio y análisis. Podemos decir que el sistema de pensiones se ve afectado por 2 grandes grupos de variables: la demografía y el mercado laboral. 
+
+Para que lo entendamos, existen dos tipos de sistemas de pensiones:
+
+Sistema de Reparto: los trabajadores del momento pagan unas cotizaciones a la seguridad social que están destinadas al pago de las pensiones de dicho momento (Es decir, los trabajadores les pagan a los pensionistas y, cuando se jubilen, los antiguos trabajadores cobrarán gracias a los futuros trabajadores)
+
+Sistema de Capitalización: cada trabajador hace sus aportaciones y, cuando se jubile, cobrará dichas aportaciones (actualizadas)
+
+En España el sistema que tenemos es el de reparto. Por tanto, este sistema funciona correctamente si la corriente de ingresos (trabajadores) y pagos (pensionistas) está equilibrada. En el momento en el que ese equilibrio se rompe de manera no transitoria, el problema se agrava y hay que abordarlo para que el sistema de pensiones sea sostenible. 
+
+¿Qué está pasando con el sistema de pensiones español? ¿Funciona correctamente? ¿Es sostenible?
+Algunos expertos afirman que el sistema está quebrado:
+
+<CENTER>
+```{r, echo = FALSE, eval = TRUE}
+
+embed_url("https://youtu.be/6ms5oSv3H5o")
+```
+</CENTER>
+
+Y otros, no piensan igual:
+
+<CENTER>
+```{r, echo = FALSE, eval = TRUE}
+
+embed_url("https://youtu.be/0RB3u3ikE54")
+```
+</CENTER>
+
+
+##   <FONT COLOR="black"> **¿Por qué hacemos este trabajo?**</FONT> 
+
+Vista la problemática tanto del tema como de las posibles soluciones y la pasividad de los políticos, como la gran mayoría dependeremos de una pensión en el futuro, queremos ver si los conductores del sistema nacional de pensiones nos llevan hacia la deriva o si todo esto es otro discurso populista de los políticos para hacer oposición.
+
+
+#   <FONT COLOR="black"> **Datos**</FONT> {.tabset}
+
+## <FONT COLOR="black"> **Extracción de datos** </FONT>
+
+Nos ha llevado un tiempo extraer todos los datos necesarios, la mayoría son obtenidos del INE, aunque también tenemos datos de Eurostat y del Banco de España. Nos hemos descargado los datos en csv, algunos estaban bien, pero otros daban problemas debido a que no los reconocía como numéricos, los nombres de las variables eran demasiado largos, por lo que era incómodo a la hora de trabajar y había mucha información que sobraba. 
+
+```{r, eval = TRUE, echo = FALSE}
+
+knitr::include_graphics(here::here("imagenes", "inebase.jpg"))
+
+knitr::include_graphics(here::here("imagenes", "banco_esp.jpg"))
+
+knitr::include_graphics(here::here("imagenes", "eurostat.png"))
+
+```
+
+
+## <FONT COLOR="black">**Código**</FONT>
+
+Una vez extraidos nuestros datos en formato .csv, nos ha tocado arreglarlos con Rstudio ya que muchas veces R no los detectava con formato numerico, no podiamos representar bien los gráficos o simplemente queriamos explicar unos datos a partir de otros y nos ha tocado juntarlos en un mismo Dataframe
+
+```{r, eval = TRUE}
+
+#- Cargamos el df del paro que anteriormente hemos descargado del INE
+
+df_paro <- rio::import("./datos/tasa_paro.csv")
+
+
+df_paro <- df_paro %>%
+  select(Paro, Periodos)
+
+#Ahora cargamos los datos del df de la tasa de actividad nacional para poder compararlos con la tasa de paro nacional.
+
+df_actividad <- rio::import("./datos/tasa_actividad.csv")
+
+df_actividad <- df_actividad %>%
+  select(Periodos, Tasa_Actividad)
+
+
+#- Vamos a juntar el df de la tasa de actividad y la tasa de paro para poder hacer un gráfico donde se representen ambas tasas.
+
+df_union <- inner_join(df_actividad, df_paro)
+
+#Vamos a comparar la evolución de la tasa de natalidad y del indice de envejecimiento para tener conocimiento de la evolución que han tenido estas variables demográficas.
+
+df_natalidad <- rio::import("./datos/tasa_natalidad.csv")
+
+df_indice <- rio::import("./datos/indice_envejecimiento.csv")
+
+df_indice <- df_indice %>%
+  filter(Periodo != 2021) %>%
+  rename(Periodos = "Periodo")
+
+df_indice$Total <- as.numeric(df_indice$Total)
+
+df_union_2 <- inner_join(df_natalidad, df_indice)
+
+df_union_2 <- df_union_2 %>%
+  select(Periodos, Tasa_Natalidad, Total)
+
+#Cargamos el df de los ocupados por grupo de edad.
+
+df_edad <- rio::import("./datos/ocup_edad.csv")
+
+df_edad$Total <- as.numeric(df_edad$Total)
+
+df_edad <- df_edad %>%
+  mutate(fecha = lubridate::yq(Periodo)) %>%
+  filter(fecha == "2021-07-01")
+
+
+#Vamos a cargar los datos referentes a la edad de emancipacion de los jovenes en España
+
+df_eman <- rio::import("./datos/edad_emancipacion.csv")
+
+df_eman <- df_eman %>%
+ filter(!(Tramo_Edad %in% "16-34 edad"))
+
+df_var <- df_eman %>%
+  pivot_wider(names_from = Periodo, values_from = Porcentaje)
+
+df_var <- janitor::clean_names(df_var)
+names(df_var)
+
+df_var <- df_var %>%
+  mutate(variacion = (x2018 - x2008)/x2008)
+
+#- Vamos a arreglar los datos de la pension media y del salario medio que encontramos en los siguientes df.
+
+df_pens_med <- rio::import("./datos/pension_media.csv")
+
+df_w_med <- rio::import("./datos/salario_medio.csv")
+
+df_w_med$w_med_anual <- as.numeric(df_w_med$w_med_anual)
+
+#- Vamos a unir los df de la pension media y del salario medio para observar la variacion entre ambas variables
+
+df_union_3 <- inner_join(df_pens_med, df_w_med)
+
+df_union_3 <- df_union_3 %>%
+  select(periodo, pension_media_anual, w_med_anual) %>%
+  mutate(porcentaje = (pension_media_anual/w_med_anual)*100)
+
+#Vamos a arreglar los datos referentes a la evolución de la esperanza de vida en España
+
+df_vida <- rio::import("./datos/esperanza_vida.csv")
+
+df_vida <- df_vida %>%
+  select("geo", "TIME_PERIOD", "OBS_VALUE") %>%
+  rename(pais = "geo", periodo = "TIME_PERIOD", esperanza_vida = "OBS_VALUE")
+
+#nos quedamos con los datos que queremos mostrar
+
+df_vida <- df_vida %>%
+  filter(pais  %in% c("FR", "ES", "IT", "PT", "AL") )
+
+#Arreglamos los datos del Fondo de Reserva de las pensiones
+
+df_fondo <- rio::import("./datos/fondo_reserva.csv")
+
+df_fondo$millones_euros <- as.numeric(df_fondo$millones_euros)
+
+#Cargamos y arreglamos los df de la piramide poblacional y de la proyeccion
+
+df_piramide <- rio::import("./datos/piramide_pob.csv")
+
+df_piramide$Total <- as.numeric(df_piramide$Total)
+
+df_piramide_20 <- df_piramide %>%
+  filter(`Año` == 2020) %>%
+  arrange(`Año`)
+
+df_proyeccion <- rio::import("./datos/proyeccion_2070.csv")
+
+df_proyeccion$total_red <- as.numeric(df_proyeccion$total_red)
+
+#Creamos los df para los años que queremos mostrar.
+
+df_proyeccion_36 <- df_proyeccion %>%
+  filter(Periodo == 2036)
+
+df_proyeccion_50 <- df_proyeccion %>%
+  filter(Periodo == 2050)
+
+df_proyeccion_70 <- df_proyeccion %>%
+  filter(Periodo == 2070)
+
+#A partir de aqui empieza lo bueno
+
+df_alternativas <- rio::import("./datos/otras_alternativas.csv")
+df_alternativas <- janitor::clean_names(df_alternativas) 
+
+
+df_alternativas_4 <- df_alternativas %>%
+  rename(Ef_y_De = efectivo_y_dep_a3sitos_2) %>%
+  rename(capital = participaciones_en_el_capital_y_en_fi_2) %>%
+  rename(year = fecha) %>%
+  rename(cotizadas = acciones_cotizadas_2) %>%
+  rename(no_cotizadas = acciones_no_cotizadas_2)%>%
+  mutate(participaciones = participaciones_en_fi_y_acciones_de_soc_de_inversi_a3n_2 + otras_participaciones_2) %>%
+  rename(cash = efectivo_2) %>%
+  mutate( depositos = dep_a3sitos_transferibles_2 + otros_dep_a3sitos_2)
+
+
+df_alternativas_4 <- df_alternativas_4 %>%
+  select(year, capital, cotizadas, no_cotizadas, participaciones, cash, Ef_y_De, depositos) %>% 
+  rename(efectivo = cash) %>%
+  rename(acciones = capital) %>%
+  rename(efectivo_y_depositos = Ef_y_De)
+
+
+df_alternativas <- df_alternativas %>%
+  rename(year = fecha) %>%
+  rename(total = todos_los_instrumentos) %>%
+  rename(oro = oro_monetario_y_deg_2) %>%
+  rename(Ef_y_De = efectivo_y_dep_a3sitos_2) %>%
+  rename(deuda = valores_representativos_de_deuda_2) %>%
+  rename(loan = pr_a_c_stamos_2) %>%
+  rename(capital = participaciones_en_el_capital_y_en_fi_2) %>%
+  rename(pensiones_priv = sistemas_de_seguros_pensiones_y_garant_a_as_estandarizadas_2) %>%
+  rename(otros = otros_activos_pasivos_2)
+
+
+df_alternativas <- df_alternativas %>%
+  select(year, total, oro, Ef_y_De, deuda, loan, capital, pensiones_priv, otros)
+
+df_alternativas_2 <- df_alternativas %>%
+  filter(year == 2020) 
+df_alternativas_2$comprobacion = rowSums (df_alternativas_2[ , 3:9])
+df_alternativas_2 <- df_alternativas_2 %>%
+  select(-total) %>% rename(total = comprobacion)
+df_alternativas_2 <- df_alternativas_2 %>% pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
+
+df_alternativas_2$porcentaje <- prop.table(df_alternativas_2$Miles_de_euros)
+df_alternativas_2$porcentaje <- round(prop.table(df_alternativas_2$Miles_de_euros), 7)*100
+
+df_alternativas[, c(1:9)] <- sapply(df_alternativas[, c(1:9)], as.numeric)
+
+df_alternativas_3 <- df_alternativas%>%
+  select(-c(total)) %>%
+  pivot_longer(cols = 2:8, names_to = "Activos", values_to = "Miles_de_euros")
+
+
+#Vamos a arreglar los datos para poder hacer una tabla
+
+df_piramide <- rio::import("./datos/piramide_pob.csv")
+df_piramide$Total <- as.numeric(df_piramide$Total)
+df_piramide2 <- df_piramide %>% 
+  select(-`Españoles/Extranjeros`) %>% 
+  rename(Periodo = Año) %>% 
+  rename(total_red = Total) %>% 
+  rename(Edad = `Edad (grupos quinquenales)`)
+
+
+df_proy <- rio::import("./datos/proyeccion_2070.csv")
+df_proy$total_red <- as.numeric(df_proy$total_red)
+df_proy2 <- df_proy %>% 
+  select (-Total)
+
+
+
+df_uni <- full_join(df_piramide2 , df_proy2)
+df_uni2 <- df_uni %>% 
+  filter(c(Edad == "0-4 años" | Edad == "65-69 años"))
+
+#Vamos a arreglar los datos para poder hacer un mapa comparativo entre paises sobre el ahorro privado
+
+df_ahorro <- rio::import("./datos/ahorro_privado.xls")
+df_ahorro <- df_ahorro %>%
+  select(-c(`Indicator Name`)) %>%
+  pivot_longer(cols = 4:64, names_to = "Year", values_to = "ahorro_PIB")
+
+
+data(World) 
+df_ahorro_1 <- janitor::clean_names(df_ahorro)
+df_ahorro_1 <- df_ahorro_1 %>%
+  filter(year == 2020) %>%
+  select(country_code, ahorro_pib)
+world <- World ; rm(World)
+world <- world %>% rename(country_code = iso_a3)
+df_mapa <- inner_join(world, df_ahorro_1)
+
+```
+
+# <FONT COLOR="Black">  **Variables Demográficas**  </FONT>
+
+
+## <FONT COLOR="Black">  Natalidad Vs. Envejecimiento </FONT> {.tabset}
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En la parte superior y en color X podemos ver la tasa de envejecimiento, mientras que en la parte inferior y en color Y encontramos la tasa de natalidad. 
+
+Claramente se aprecia que la evolución de la natalidad ha sido decreciente, mientras que la tasa de envejecimiento ha aumentado. 
+
+
+<CENTER>
+*¿Y qué significa esto?* **+Gasto - Ingresos = ...**
+</CENTER>
+
+<br><br>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p2 <- ggplot(df_union_2) +
+  geom_line(aes(Periodos, Tasa_Natalidad, color = "Tasa_Natalidad")) + 
+  geom_point(aes(Periodos, Tasa_Natalidad, color = "Tasa_Natalidad")) +
+  geom_line(aes(Periodos, Total, color = "Indice_envejecimiento"))+
+  geom_point(aes(Periodos, Total, color = "Indice_envejecimiento"))+
+  scale_y_continuous(name = "Indice de envejecimiento", 
+                     sec.axis = sec_axis(~./5, name = "Tasa Natalidad", 
+                                         labels = function(b) { paste0(round(b * 4, 0), "%")})) +
+  labs(title = "Comparación Tasa de Natalidad e Índice de Envejecimiento",
+    subtitle = "Datos extraidos del INEBase") +
+  theme_minimal()
+  
+
+
+ggplotly(p2)
+
+```
+
+<br>
+<br>
+<br>
+
+### <FONT COLOR="Black"> **Código**  </FONT>
+
+
+```{r, eval = FALSE, echo = TRUE}
+
+p2 <- ggplot(df_union_2) +
+  geom_line(aes(Periodos, Tasa_Natalidad, color = "Tasa_Natalidad")) + 
+  geom_point(aes(Periodos, Tasa_Natalidad, color = "Tasa_Natalidad")) +
+  geom_line(aes(Periodos, Total, color = "Indice_envejecimiento"))+
+  geom_point(aes(Periodos, Total, color = "Indice_envejecimiento"))+
+  scale_y_continuous(name = "Indice de envejecimiento", 
+                     sec.axis = sec_axis(~./5, name = "Tasa Natalidad", 
+                                         labels = function(b) { paste0(round(b * 4, 0), "%")})) +
+  labs(title = "Comparación Tasa de Natalidad e Índice de Envejecimiento",
+    subtitle = "Datos extraidos del INEBase") +
+  theme_minimal()
+  
+
+
+ggplotly(p2)
+
+```
+
+
+<br>
+<br>
+<br>
+
+## <FONT COLOR="Black">  Evolución de la esperanza de vida  </FONT> {.tabset}
+
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En este caso se puede apreciar la clara tendencia alcista en la evolución de la esperanza de vida. Hace años, ejemplo en 1980, en España la gente moría de media a los 75 años. Los últimos datos, 2019, nos indican que de media la población española fallece a los 84 años.
+
+Por tanto,el avance del sistema de bienestar hace que  la gente viva más años en edad de jubilación por lo que aumentan los gastos del sistema 
+
+Sin embargo esto no es un caso aislado del sistema español, pues afecta a todas las economías desarrolladas.
+
+<CENTER>
+*¿Y qué significa esto?* **+Gasto **
+</CENTER>
+<br><br>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p11 <- ggplot(df_vida) +
+ aes(x = periodo, y = esperanza_vida, colour = pais) +
+ geom_line(size = 1) +
+ theme_minimal() + 
+  theme(plot.subtitle = element_text(size = 11)) +labs(title = "Evolución de la esperanza de vida por paises",
+    x = "Periodo", y = "Años de vida", subtitle = "Datos extraidos de Eurostat")
+
+ggplotly(p11)
+
+```
+
+<br>
+<br>
+<br>
+
+
+### <FONT COLOR="Black"> **Código**  </FONT>
+
+
+```{r, eval = FALSE, echo = TRUE}
+
+p11 <- ggplot(df_vida) +
+ aes(x = periodo, y = esperanza_vida, colour = pais) +
+ geom_line(size = 1) +
+ theme_minimal() + 
+  theme(plot.subtitle = element_text(size = 11)) +labs(title = "Evolución de la esperanza de vida por paises",
+    x = "Periodo", y = "Años de vida", subtitle = "Datos extraidos de Eurostat")
+
+ggplotly(p11)
+
+```
+
+## <FONT COLOR="Black">  Piramide Poblacional  </FONT> {.tabset}
+
+
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En este caso podemos apreciar las imágenes que resumen, aunque de manera aproximada, la inestabilidad del sistema. El problema de disminución de ingresos junto al aumento de gastos se agravará en el futuro según las proyecciones del INE. 
+¿Y si hacemos un nuevo baby boom? Algunos economistas hablan de que un nuevo baby boom ayudaría a solucionar el problema, puesto que aumentaría los ingresos potenciales. Sin embargo, este enfoque es miope, ya que no se está teniendo en cuenta que en el futuro, cuando la generación del nuevo baby boom sea anciana, sería necesario otro incremento masivo de la natalidad, entrando así en un bucle de necesidad de incremento de la población.
+
+Pan para hoy y hambre para mañana
+
+```{r, eval = TRUE, echo = FALSE}
+
+p13 <- ggplot(df_piramide, aes(x = `Edad (grupos quinquenales)`,
+                y = `Total`,
+                fill = Sexo)) +
+  geom_col(data = subset(df_piramide, Sexo == "Hombres") %>% 
+             mutate(`Total` = - `Total`),
+           width = 0.5, fill = "blue") +
+  geom_col(data = subset(df_piramide, Sexo == "Mujeres"),
+           width = 0.5, fill = "pink") + 
+  coord_flip()+labs(title = "Piramide Poblacional año 2020 ",
+    y = "Miles de Personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p13)
+
+```
+
+
+### <FONT COLOR="Black"> **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+p13 <- ggplot(df_piramide, aes(x = `Edad (grupos quinquenales)`,
+                y = `Total`,
+                fill = Sexo)) +
+  geom_col(data = subset(df_piramide, Sexo == "Hombres") %>% 
+             mutate(`Total` = - `Total`),
+           width = 0.5, fill = "blue") +
+  geom_col(data = subset(df_piramide, Sexo == "Mujeres"),
+           width = 0.5, fill = "pink") + 
+  coord_flip()+labs(title = "Piramide Poblacional año 2020 ",
+    y = "Miles de Personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p13)
+
+```
+
+
+## <FONT COLOR="Black">  Proyecciones Poblacionales  </FONT> {.tabset}
+
+
+
+### <FONT COLOR="Black"> **2036**  </FONT>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p14 <- ggplot(df_proyeccion_36, aes(x = `Edad`,
+                        y = `total_red`,
+                        fill = Sexo)) +
+  geom_col(data = subset(df_proyeccion_36, Sexo == "Hombres") %>% 
+             mutate(`total_red` = - `total_red`),
+           width = 0.5, fill = "blue") +
+  geom_col(data = subset(df_proyeccion_36, Sexo == "Mujeres"),
+           width = 0.5, fill = "pink") + 
+  coord_flip()+labs(title = "Piramide Poblacional año 2036",
+    y = "Miles de personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p14)
+
+```
+
+### <FONT COLOR="Black"> **2050**  </FONT>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p15 <- ggplot(df_proyeccion_50, aes(x = `Edad`,
+                             y = `total_red`,
+                             fill = Sexo)) +
+  geom_col(data = subset(df_proyeccion_50, Sexo == "Hombres") %>% 
+             mutate(`total_red` = - `total_red`),
+           width = 0.5, fill = "blue") +
+  geom_col(data = subset(df_proyeccion_50, Sexo == "Mujeres"),
+           width = 0.5, fill = "pink") + 
+  coord_flip() +
+  labs(title = "Piramide Poblacional año 2050",
+       y = "Miles de personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p15)
+
+```
+
+### <FONT COLOR="Black"> **2070**  </FONT>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p16 <- ggplot(df_proyeccion_70, aes(x = `Edad`,
+                             y = `total_red`,
+                             fill = Sexo)) +
+  geom_col(data = subset(df_proyeccion_70, Sexo == "Hombres") %>% 
+             mutate(`total_red` = - `total_red`),
+           width = 0.5, fill = "blue") +
+  geom_col(data = subset(df_proyeccion_70, Sexo == "Mujeres"),
+           width = 0.5, fill = "pink") + 
+  coord_flip() +
+  labs(title = "Piramide Poblacional año 2070",
+       y = "Miles de personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p16)
+
+```
+
+### <FONT COLOR="Black"> **Tabla**  </FONT>
+
+```{r, eval = TRUE, echo = FALSE}
+
+df_uni2 %>%  DT::datatable(extensions = 'Buttons', 
+                      options = list(dom = 'Blfrtip', 
+                                     buttons = c('copy', 'csv', 'excel', 'pdf', 'print'), 
+                                     pageLength = 5, autoWidth = TRUE ))
+
+```
+
+## <FONT COLOR="Black">  Emancipación  </FONT> {.tabset}
+
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En relación con la posible solución del baby boom, desde nuestro punto de vista, el principal problema reside en la edad de emancipación. Si les preguntamos a nuestros abuelos o padres a qué edad empezaron a trabajar probablemente escuchemos un intervalo de edad de 13-18 años. Sin embargo, a día de hoy esa edad es mucho más tardía. Por lo tanto el principal problema lo podemos ver en que la gente entra más tarde al mercado laboral junto a que ahora se vive más años.Por ello que los politicos están alargando la edad de jubilación.
+
+<CENTER>
+*¿Y qué significa esto?* **+Gasto - Ingresos = ...**
+</CENTER>
+
+<br><br>
+
+```{r, eval = TRUE, echo = FALSE}
+
+p8 <- ggplot(df_eman) +
+ aes(x = Tramo_Edad, fill = Tramo_Edad, weight = Porcentaje) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal() +
+ facet_wrap(vars(Periodo)) + theme(plot.subtitle = element_text(size = 11),
+    axis.title = element_text(size = 13),
+    plot.title = element_text(size = 16)) +labs(title = "Porcentaje de Emancipados por edad",
+    x = "Tramo de Edad", y = "Porcentaje de emancipados",
+    subtitle = "Datos extraidos del BBVA Research Foundation")
+
+ggplotly(p8)
+
+```
+
+<br>
+
+```{r, eval = TRUE, echo = FALSE}
+ p9 <- ggplot(df_var) +
+ aes(x = tramo_edad, fill = tramo_edad, weight = variacion) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal() + theme(plot.subtitle = element_text(size = 10)) +labs(title = "Variación porcentual de emancipados 2018 - 2008",
+    x = "Tramo de Edad", y = "Variación de emancipados",
+    fill = "Tramo de Edad", subtitle = "Datos extraidos del BBVA Research")
+
+ggplotly(p9)
+
+
+```
+
+
+<br>
+<br>
+<br>
+
+### <FONT COLOR="Black"> **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+p8 <- ggplot(df_eman) +
+ aes(x = Tramo_Edad, fill = Tramo_Edad, weight = Porcentaje) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal() +
+ facet_wrap(vars(Periodo)) + theme(plot.subtitle = element_text(size = 11),
+    axis.title = element_text(size = 13),
+    plot.title = element_text(size = 16)) +labs(title = "Porcentaje de Emancipados por edad",
+    x = "Tramo de Edad", y = "Porcentaje de emancipados",
+    subtitle = "Datos extraidos del BBVA Research Foundation")
+
+ggplotly(p8)
+
+
+ p9 <- ggplot(df_var) +
+ aes(x = tramo_edad, fill = tramo_edad, weight = variacion) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal() + theme(plot.subtitle = element_text(size = 10)) +labs(title = "Variación porcentual de emancipados 2018 - 2008",
+    x = "Tramo de Edad", y = "Variación de emancipados",
+    fill = "Tramo de Edad", subtitle = "Datos extraidos del BBVA Research")
+
+ggplotly(p9)
+
+```
+
+
+<br>
+<br>
+<br>
+
+# <FONT COLOR="Black">  **Mercado Laboral**  </FONT>
+
+## <FONT COLOR="Black">  Tasa de Paro Vs. Actividad  </FONT> {.tabset}
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En este caso podemos apreciar que ambas variables se mueven al unísono pero de manera inversa. Así, cuando el paro disminuye, aumenta la tasa de actividad y viceversa. Día tras día podemos escuchar y/o leer en las noticias el preocupante problema del paro español, por ejemplo [aquí](https://www.eleconomista.es/opinion-blogs/noticias/11142601/04/21/El-cronico-problema-del-paro.html)
+
+Desde el punto de vista del sistema de pensiones español, que recordemos que es un sistema de reparto (los trabajadores de ahora pagan a los pensionistas de ahora), esto influye en la menor capacidad recaudatoria de dicho sistema y, por tanto, provoca una gran inestabilidad.
+
+<CENTER>
+*¿Y qué significa esto?* **- Ingresos**
+</CENTER>
+
+<br><br>
+
+
+```{r, eval = TRUE, echo = FALSE}
+
+p4 <- ggplot(df_union) +
+  geom_bar(aes(Periodos, Tasa_Actividad), stat = "identity", fill = "grey") +
+  geom_line(aes(Periodos, Paro), size = 1) +
+  geom_point(aes(Periodos, Paro), size = 2) +
+  labs(title = "Comparación Tasa de Paro y de Actividad",
+       subtitle = "Datos para el periodo 2002 - 2020",
+       caption = "Datos provenientes del INEBase",
+       y = "Tasa de Paro y Actividad") +
+  theme_minimal()
+
+
+ggplotly(p4)
+
+```
+
+<br>
+<br>
+<br>
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+p4 <- ggplot(df_union) +
+  geom_bar(aes(Periodos, Tasa_Actividad), stat = "identity", fill = "grey") +
+  geom_line(aes(Periodos, Paro), size = 1) +
+  geom_point(aes(Periodos, Paro), size = 2) +
+  labs(title = "Comparación Tasa de Paro y de Actividad",
+       subtitle = "Datos para el periodo 2002 - 2020",
+       caption = "Datos provenientes del INEBase",
+       y = "Tasa de Paro y Actividad") +
+  theme_minimal()
+
+
+ggplotly(p4)
+
+
+```
+
+<br>
+<br>
+<br>
+
+
+
+## <FONT COLOR="Black">  Ocupados por grupo de Edad  </FONT> {.tabset}
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+Este análisis va en línea al anterior. En este caso cabe destacar que para que el sistema recibiera una bocanada de aire esperanzador, la fuerza motriz del mercado laboral debería ser principalmente las edades de 20 a 50 años. Así conseguiríamos que las pensiones estuvieran más garantizadas que ahora mismo. Sin embargo, se puede apreciar claramente la baja tasa de ocupación a edades de entre 20 y 30 años, cosa que preocupa y mucho. Concrétamente, según [fuentes documentales](https://www.nuevatribuna.es/articulo/sociedad/parojuvenil-viejo-problemaestructural-jovenes-precariedad/20210810151719190164.html#:~:text=Espa%C3%B1a%2C%20en%20la%20actualidad%2C%20es,en%20el%2017%2C1%25.) España tiene la tasa de paro juvenil más alta de los países miembros de la Unión Europea
+
+<CENTER>
+*¿Y qué significa esto?* **Futuro Negro para España**
+</CENTER>
+
+<br><br>
+
+
+```{r, eval = TRUE, echo = FALSE}
+
+p10 <- ggplot(df_edad) +
+ aes(x = Edad, fill = Edad, weight = Total) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal()+labs(title = "Ocupados por grupo de Edad en 2021",
+    x = NULL, y = "Miles de Personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p10)
+
+```
+
+<br>
+<br>
+<br>
+
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+p10 <- ggplot(df_edad) +
+ aes(x = Edad, fill = Edad, weight = Total) +
+ geom_bar() +
+ scale_fill_viridis_d(option = "viridis", 
+ direction = 1) +
+ theme_minimal()+labs(title = "Ocupados por grupo de Edad en 2021",
+    x = NULL, y = "Miles de Personas", subtitle = "Datos extraidos del INEBase")
+
+ggplotly(p10)
+
+```
+
+<br>
+<br>
+<br>
+
+
+# <FONT COLOR="Black">  **Pensiones**  </FONT> 
+
+
+## <FONT COLOR="Black"> Evolución del Fondo de Reserva </FONT>{.tabset}
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+Primero que nada debemos entender que el fondo de reserva es el “lugar” donde, en épocas de superávit, se depositan las aportaciones que sobran (cosa que hace que el fondo aumente) y, en épocas deficitarias, se utiliza para tomar dinero para pagar a los pensionistas (disminuye el fondo de reserva). 
+
+Claramente se puede apreciar que en la época precrisis (antes de 2008) el mercado laboral español estaba en auge, cosa que permitía que la cantidad ingresada en la seguridad social fuera superior a la cantidad gastada (cotizaciones > pensiones), provocando un superávit del fondo de reserva. Sin embargo, está claro que la crisis tuvo gran incidencia en el mercado laboral español. La gran tasa de paro junto al aumento del nº de pensionistas provocó el gran declive de lo que comúnmente se conoce como la “hucha de las pensiones”.
+Muchos economistas califican este gráfico como una imágen de la estructura deficitaria de dicho sistema. Además, el problema no es tanto que lo hayamos utilizado durante años de malestar económico nacional, sinó que las proyecciones y el análisis de variables no parecen prometer una recuperación del superávit
+
+<CENTER>
+*¿Y qué significa esto?* **Nos estamos fundiendo los ahorros de nuestros abuelos**
+</CENTER>
+
+
+```{r, eval = TRUE, echo = FALSE}
+
+
+p12 <- ggplot(df_fondo) +
+ aes(x = periodo, y = millones_euros) +
+ geom_line(size = 1, colour = "#066DD1") +
+  geom_point()+labs(title = "Evolución del Fondo de Reserva 2000 - 2019",
+    x = "Periodo", y = "Millones de Euros",
+    subtitle = "Datos extraidos del INEBase") +
+  theme_minimal()
+
+ggplotly(p12)
+
+
+```
+
+<br>
+<br>
+<br>
+
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+p12 <- ggplot(df_fondo) +
+ aes(x = periodo, y = millones_euros) +
+ geom_line(size = 1, colour = "#066DD1") +
+  geom_point()+labs(title = "Evolución del Fondo de Reserva 2000 - 2019",
+    x = "Periodo", y = "Millones de Euros",
+    subtitle = "Datos extraidos del INEBase") +
+  theme_minimal()
+
+ggplotly(p12)
+
+
+```
+
+<br>
+<br>
+<br>
+
+## <FONT COLOR="Black">  Tasa de cobertura o reemplazo  </FONT> {.tabset}
+
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En palabras sencillas, la tasa de cobertura o de reemplazo de las pensiones nos indica el porcentaje del salario que cobramos como pensión. La calculamos dividiendo nuestra pensión entre nuestro último salario. Así medimos si el sistema es capaz de mantener nuestra capacidad adquisitiva. A modo de ejemplo, si un trabajador cobra 600€ de pensión y su último salario era de 1.000€, la tasa de cobertura es de (600/1000 *100) 60% . Es decir, al pasar de ser trabajador a pensionista, estamos perdiendo un 40% de poder adquisitivo (respecto al último día que trabajamos).
+
+Podemos apreciar que la tendencia evolutiva ha sido ascendiente, claro ejemplo del fomento del estado de bienestar. SIn embargo, más que la evolución pasada, lo que tenemos que preguntarnos es si aumentar o mantener la tasa de cobertura será viable según los nefastos pronósticos que los economistas diagnostican.
+
+
+```{r, eval = TRUE, echo = FALSE}
+
+p7 <- ggplot(df_union_3, aes(periodo, porcentaje)) + 
+  geom_line(size = 0.8) + 
+  geom_point() + 
+  theme(axis.line = element_line(size = 0.5),
+    panel.grid.major = element_line(size = 0),
+    axis.text = element_text(size = 12),
+    panel.background = element_rect(fill = "gray85"),
+    plot.background = element_rect(fill = "white")) +labs(title = "Tasa de cobertura o reemplazo de la pensión media",
+    x = "Periodo", y = "Porcentaje", subtitle = "Datos extraidos del INEBase ") +
+  theme_minimal()
+
+ggplotly(p7)
+
+```
+
+<br>
+<br>
+<br>
+
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+p7 <- ggplot(df_union_3, aes(periodo, porcentaje)) + 
+  geom_line(size = 0.8) + 
+  geom_point() + 
+  theme(axis.line = element_line(size = 0.5),
+    panel.grid.major = element_line(size = 0),
+    axis.text = element_text(size = 12),
+    panel.background = element_rect(fill = "gray85"),
+    plot.background = element_rect(fill = "white")) +labs(title = "Tasa de cobertura o reemplazo de la pensión media",
+    x = "Periodo", y = "Porcentaje", subtitle = "Datos extraidos del INEBase ") +
+  theme_minimal()
+
+ggplotly(p7)
+
+```
+ 
+<br>
+<br>
+<br>
+
+# <FONT COLOR="Black">  **Alternativas a las pensiones públicas**  </FONT> 
+
+Para analizar la viabilidad del sistema de pensiones es importante analizar si existen alternativas reales a la pensión pública en estos momentos en España. Queremos averiguar si es factible pensar que el ahorro privado es suficiente para compensar unas pensiones futuras, en caso de que este sistema fracase. Para ello hemos investigado cómo se distribuye el ahorro privado en España y cómo ha ido evolucionando este en los últimos años. 
+ 
+<br>
+
+## <FONT COLOR="Black"> Comparación del ahorro privado entre paises </FONT>{.tabset}
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+Primero, hemos elaborado este mapa para observar en el año 2020, qué porcentaje del PIB ocupa el ahorro privado en casi todos los países del mundo. Vemos que en España se sitúa en el 21,3%. Como se aprecia en el mapa, los niveles más altos de ahorro se encuentran en los países del norte de Europa y el sur de Asia, nos sorprende especialmente los casos de Marruecos, Uzbequistán  y Bangladesh. Países como Suiza, Noruega y Suecia cuentan con sistemas de pensiones mixtos, es decir, un porcentaje de las pensiones es pagado por el país y otro por el propio ahorro privado del beneficiario. Es por ello que cuentan con grandes porcentajes de ahorro privado con respecto al PIB, ya que el propio sistema favorece a ello. 
+
+<CENTER>
+*¿Y qué significa esto?* **Ahorro insuficiente**
+</CENTER>
+
+```{r, eval = TRUE, echo = FALSE}
+
+mypalette <- colorNumeric( palette="Greys", domain=df_mapa$ahorro_pib,na.color="transparent")
+
+mytext <- paste(
+  "País: ", df_mapa$name,"<br/>", 
+  "Situación económica:",  df_mapa$economy, "<br/>", 
+  "Porcentaje de ahorro: ", df_mapa$ahorro_pib, 
+  sep="") %>%
+  lapply(htmltools::HTML)
+mapa <- leaflet(df_mapa) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons( 
+    fillColor = ~mypalette(ahorro_pib), 
+    stroke=TRUE, 
+    fillOpacity = 0.9, 
+    color="white", 
+    weight=0.3,
+    label = mytext,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto"
+    )
+  ) %>%
+  addLegend( pal=mypalette, values=~ahorro_pib, opacity=0.9, title = "% de ahorro en el PIB", position = "bottomleft" )
+mapa
+
+```
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+mypalette <- colorNumeric( palette="Greys", domain=df_mapa$ahorro_pib,na.color="transparent")
+
+mytext <- paste(
+  "País: ", df_mapa$name,"<br/>", 
+  "Situación económica:",  df_mapa$economy, "<br/>", 
+  "Porcentaje de ahorro: ", df_mapa$ahorro_pib, 
+  sep="") %>%
+  lapply(htmltools::HTML)
+mapa <- leaflet(df_mapa) %>% 
+  addTiles()  %>% 
+  setView( lat=10, lng=0 , zoom=2) %>%
+  addPolygons( 
+    fillColor = ~mypalette(ahorro_pib), 
+    stroke=TRUE, 
+    fillOpacity = 0.9, 
+    color="white", 
+    weight=0.3,
+    label = mytext,
+    labelOptions = labelOptions( 
+      style = list("font-weight" = "normal", padding = "3px 8px"), 
+      textsize = "13px", 
+      direction = "auto"
+    )
+  ) %>%
+  addLegend( pal=mypalette, values=~ahorro_pib, opacity=0.9, title = "% de ahorro en el PIB", position = "bottomleft" )
+mapa
+
+```
+
+
+## <FONT COLOR="Black"> Tabla comparativa </FONT>{.tabset}
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En la siguiente tabla observamos el porcentaje de ahorro en relación al PIB en todos los países que tenemos datos en 2020 y la diferencia con la media total. Observamos como España se sitúa 1 punto porcentual por debajo de la media total, que es del 22,37%. Si filtramos de mayor a menor podemos apreciar como Singapur es el país del mundo con mayor ahorro, con más del 40%, otro país que cuenta con un sistema de capitalización (igual que Suecia y Noruega). De esta manera, es el propio trabajador el que, por ley, ahorra dinero durante toda su vida para gastarlo cuando se jubile, y el país ofrece una ayuda para aquellos que no alcancen el mínimo ahorrado. Eso explica porcentajes tan altos de ahorro. 
+
+
+Entre los países con menor tasa de ahorro encontramos a Grecia, Ucrania o Reino Unido. Mientras los 2 primeros cuentan con sistemas de reparto puramente público, como en España, sorprende el caso de Reino Unido, en el cual las pensiones públicas no superan el 30% del salario medio del país.
+
+<CENTER>
+*¿Y qué significa esto?* **+ Pensiones puramente públicas - ahorro privado**
+</CENTER>
+
+```{r, eval = TRUE, echo = FALSE}
+df_tabla <- df_ahorro  %>%
+  filter(Year == 2020) %>%
+  drop_na() %>%
+  mutate(diferencia = ahorro_PIB - mean(ahorro_PIB , na.rm = TRUE)) %>%
+  select('Country Name', ahorro_PIB, diferencia)
+library(DT)  
+DT::datatable(df_tabla)
+```
+
+
+### <FONT COLOR="Black"> **Código**  </FONT>
+```{r, eval = FALSE, echo = TRUE}
+df_tabla <- df_ahorro  %>%
+  filter(Year == 2020) %>%
+  drop_na() %>%
+  mutate(diferencia = ahorro_PIB - mean(ahorro_PIB , na.rm = TRUE)) %>%
+  select('Country Name', ahorro_PIB, diferencia)
+library(DT)  
+DT::datatable(df_tabla)
+```
+
+
+## <FONT COLOR="Black"> Distribución del ahorro privado </FONT>{.tabset}
+
+Pero, dentro de España, ¿cómo se distribuye el ahorro? ¿Le estamos sacando toda la rentabilidad posible? Vemos como la mayor parte del ahorro se distribuye en capital (acciones y participaciones), efectivo y depósitos, valores representativos de deuda (bonos, obligaciones, pagarés, etc.) y préstamos. El activo más rentable históricamente son las acciones, por lo que no está mal en ese sentido, aunque habría que analizar en qué acciones se invierte principalmente y cuán rentables son estas para sacar una conclusión. Por otro lado, el efectivo y los depósitos son los activos menos rentables posibles (nula o negativa si contamos la inflación).
+
+<CENTER>
+*¿Y qué significa esto?* **Rentabilidad insuficiente**
+</CENTER>
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+```{r, eval = TRUE, echo = FALSE}
+
+g1 <- ggplot(df_alternativas_2, aes(x=1, y=porcentaje, fill= Activos)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label = paste0(round(porcentaje,1),"%")), 
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y") + 
+  theme_void()+labs(title = "Ahorro privado en 2020", x = NULL,
+    subtitle = "Datos extraidos del Banco de España")
+
+g1  
+
+```
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+g1 <- ggplot(df_alternativas_2, aes(x=1, y=porcentaje, fill= Activos)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label = paste0(round(porcentaje,1),"%")), 
+            position = position_stack(vjust = 0.5)) +
+  coord_polar(theta = "y") + 
+  theme_void()+labs(title = "Ahorro privado en 2020", x = NULL,
+    subtitle = "Datos extraidos del Banco de España")
+
+g1 
+
+```
+ 
+<br>
+<br>
+<br>
+
+## <FONT COLOR="Black"> Evolución del ahorro privado </FONT>{.tabset}
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+En este gráfico observamos el crecimiento de las diferentes partidas durante los últimos 20 años, es interesante como el capital ha crecido más que el resto de partidas, aunque con mayor volatilidad, ya que se puede apreciar la caída en los años de crisis (2008-2014).
+
+<CENTER>
+*¿Y qué significa esto?* **¿camino correcto?**
+</CENTER>
+
+```{r, eval = TRUE, echo = FALSE}
+
+plot_dinamico <- df_alternativas_3 %>%
+  ggplot(aes(x = Activos, 
+             y = Miles_de_euros, 
+             fill= Activos )) +
+  geom_bar(stat= "identity", 
+           color = "grey", 
+           show.legend = FALSE) +
+  geom_text(aes(label = as.numeric(Miles_de_euros)), 
+            position = position_stack(), 
+            vjust= 1,
+            hjust= -0.1,
+            size = 4, 
+            color = "black")+
+  scale_fill_manual(values = c("orange", "darkgrey", "green", "red", "blue", "yellow", "purple")) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()+
+  enter_appear() +
+  transition_states(year, 
+                    transition_length = 5, 
+                    state_length = 5) +
+  labs(title = " Volumen de los activos financieros por año \n Year : {closest_state}", 
+       subtitle = "En miles de euros",
+       y = "",
+       x = "",
+       caption = "Banco de España") +
+  theme(panel.grid.major.x = element_blank(),
+        plot.title = element_text(size = 18, 
+                                  face = "bold", 
+                                  hjust = 0.5),
+        plot.subtitle = element_text(size=14, 
+                                     face = "plain", 
+                                     hjust = 0.5)) + coord_flip()
+
+plot_dinamico
+
+```
+
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+plot_dinamico <- df_alternativas_3 %>%
+  ggplot(aes(x = Activos, 
+             y = Miles_de_euros, 
+             fill= Activos )) +
+  geom_bar(stat= "identity", 
+           color = "grey", 
+           show.legend = FALSE) +
+  geom_text(aes(label = as.numeric(Miles_de_euros)), 
+            position = position_stack(), 
+            vjust= 1,
+            hjust= -0.1,
+            size = 4, 
+            color = "black")+
+  scale_fill_manual(values = c("orange", "darkgrey", "green", "red", "blue", "yellow", "purple")) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()+
+  enter_appear() +
+  transition_states(year, 
+                    transition_length = 5, 
+                    state_length = 5) +
+  labs(title = " Volumen de los activos financieros por año \n Year : {closest_state}", 
+       subtitle = "En miles de euros",
+       y = "",
+       x = "",
+       caption = "Banco de España") +
+  theme(panel.grid.major.x = element_blank(),
+        plot.title = element_text(size = 18, 
+                                  face = "bold", 
+                                  hjust = 0.5),
+        plot.subtitle = element_text(size=14, 
+                                     face = "plain", 
+                                     hjust = 0.5)) + coord_flip()
+
+plot_dinamico
+
+```
+
+## <FONT COLOR="Black"> Distribución acciones y depósitos </FONT>{.tabset}
+
+### <FONT COLOR="Black"> **Análisis**  </FONT>
+
+Pero, dentro de España, ¿cómo se distribuye el ahorro? ¿Le estamos sacando toda la rentabilidad posible? Vemos como la mayor parte del ahorro se distribuye en capital (acciones y participaciones), efectivo y depósitos, valores representativos de deuda (bonos, obligaciones, pagarés, etc.) y préstamos. El activo más rentable históricamente son las acciones, por lo que no está mal en ese sentido, aunque habría que analizar en qué acciones se invierte principalmente y cuán rentables son estas para sacar una conclusión. Por otro lado, el efectivo y los depósitos son los activos menos rentables posibles (nula o negativa si contamos la inflación).
+
+<CENTER>
+*¿Y qué significa esto?* **Rentabilidad insuficiente**
+</CENTER>
+```{r, eval = TRUE, echo = FALSE}
+
+sketch = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(th(rowspan = 2, 'Año'),
+      th(colspan = 3, 'Acciones'),
+      th(colspan = 2, 'Efectivo y depósitos')),
+    tr(lapply(rep(c('cotizadas', 'no cotizadas', 'participaciones', 'efectivo', 'depósitos'), 1), th)
+    )
+  )
+))
+
+
+df_alternativas_5 <- df_alternativas_4%>%
+  select(-c("acciones", "efectivo_y_depositos"))
+datatable(df_alternativas_5, container = sketch, rownames = FALSE)  
+
+```
+
+### <FONT COLOR="Black">  **Código**  </FONT>
+
+```{r, eval = FALSE, echo = TRUE}
+
+sketch = htmltools::withTags(table(
+  class = 'display',
+  thead(
+    tr(th(rowspan = 2, 'Año'),
+      th(colspan = 3, 'Acciones'),
+      th(colspan = 2, 'Efectivo y depósitos')),
+    tr(lapply(rep(c('cotizadas', 'no cotizadas', 'participaciones', 'efectivo', 'depósitos'), 1), th)
+    )
+  )
+))
+print(sketch)
+
+df_alternativas_5 <- df_alternativas_4%>%
+  select(-c("acciones", "efectivo_y_depositos"))
+datatable(df_alternativas_5, container = sketch, rownames = FALSE)  
+
+```
+
+
+
+#<FONT COLOR="Black"> **Conclusiones** </FONT>
+
+Entonces ¿es viable el sistema de pensiones en España? ¿qué ocurrirá dentro de 20 años? Bueno, como hemos podido analizar, existen preocupantes datos en cuanto a lo que el sistema se refiere. Las alarmas suenan cuando analizamos las variables demográficas, donde el baby boom de los años años 60 en relación con la reducción constante de la natalidad de los últimos 30-40 años hacen prever un número de jubilados futuros que puede llegar a ser insostenible. 
+
+
+El mercado laboral no deja mejores impresiones, con tasas de paro altísimas y empleo demasiado bajo entre las personas de 20 y 30 años. Este dato puede afectar a la tasa de natalidad del futuro, ya que si estos grupos de edad no tienen una estabilidad económica es probable que pospongan la decisión de tener hijos o, incluso, la desestimen. Pero, además de eso, ¿quién va a pagar las pensiones dentro de 20 años si los que hoy tienen 30 no tienen trabajo?
+
+
+La financiación de las pensiones tampoco arroja señales positivas, ya que durante la crisis el fondo de reserva se redujo considerablemente y, además, la tasa de cobertura no deja de aumentar. 
+
+
+Y las alternativas no nos dejan datos del todo horribles, pero siguen sin estar a niveles de los mejores sistemas de pensiones del mundo, además de un excesivo peso en el ahorro de los depósitos y el efectivo. 
+Por todo esto, nuestra conclusión es que hay suficientes alarmas para, al menos, preocuparse y hacerse ciertas preguntas. ¿Confiamos en que dentro de 15, 20 años, cuando nuestros padres se jubilen, tendrán una pensión pública digna como merecen? ¿la tendremos nosotros dentro de 40 años? ¿qué soluciones podemos encontrar como individuos particulares? ¿y qué decisiones puede tomar el Estado?
+
+<br><br>
+
+#<FONT COLOR="Black"> **Bibliografía**</FONT>
+
+
+
+<br><br>
+
+<hr class="linea-red">
+<hr class="linea-red">
+
+
+```{r, echo = FALSE}
+sessioninfo::session_info() %>% details::details(summary = 'Información de mi R-sesión:') 
+```
+
+
+<br><br>
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
